@@ -58,7 +58,7 @@ hoyscli
 Or
 
 ```bash
-npm start
+node index.js
 ```
 
 ## Example
