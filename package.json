@@ -1,6 +1,6 @@
 {
   "name": "hoyscli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A simple interactive CLI with auto-loaded shortcut commands.",
   "type": "module",
   "main": "index.js",
