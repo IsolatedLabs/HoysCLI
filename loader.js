@@ -6,12 +6,15 @@ export async function loadCommands() {
   const commands = new Map();
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const cmdsDir = path.join(__dirname, "../cmds");
+
+  // loader.js lives in the project root, so cmds is a sibling directory.
+  const cmdsDir = path.join(__dirname, "cmds");
 
   let categories = [];
   try {
     categories = await fs.readdir(cmdsDir, { withFileTypes: true });
-  } catch {
+  } catch (error) {
+    console.error("No se pudo leer la carpeta cmds:", error.message);
     return commands;
   }
 
@@ -24,7 +27,8 @@ export async function loadCommands() {
     let files = [];
     try {
       files = await fs.readdir(categoryPath, { withFileTypes: true });
-    } catch {
+    } catch (error) {
+      console.error(`No se pudo leer la categoría ${category}:`, error.message);
       continue;
     }
 
@@ -32,24 +36,27 @@ export async function loadCommands() {
       if (!file.isFile() || !file.name.endsWith(".js")) continue;
 
       const filePath = path.join(categoryPath, file.name);
-      const mod = await import(pathToFileURL(filePath).href);
-      const command = mod.default;
 
-      if (!command || typeof command.name !== "string" || typeof command.run !== "function") {
-        continue;
-      }
+      try {
+        const mod = await import(pathToFileURL(filePath).href);
+        const command = mod.default;
 
-      if (!command.category) {
-        command.category = category;
-      }
+        if (!command || typeof command.name !== "string" || typeof command.run !== "function") {
+          continue;
+        }
 
-      commands.set(command.name, command);
-      if (Array.isArray(command.aliases)) {
-        for (const alias of command.aliases) {
-          if (typeof alias === "string" && alias.trim()) {
-            commands.set(alias, command);
+        command.category ??= category;
+        commands.set(command.name, command);
+
+        if (Array.isArray(command.aliases)) {
+          for (const alias of command.aliases) {
+            if (typeof alias === "string" && alias.trim()) {
+              commands.set(alias, command);
+            }
           }
         }
+      } catch (error) {
+        console.error(`Error cargando ${filePath}:`, error.message);
       }
     }
   }

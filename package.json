@@ -3,8 +3,12 @@
   "version": "1.0.1",
   "description": "A simple interactive CLI with auto-loaded shortcut commands.",
   "type": "module",
+  "main": "index.js",
   "bin": {
     "hoyscli": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
   },
   "license": "MIT",
   "engines": {
