@@ -4,7 +4,7 @@ import { loadCommands } from "./loader.js";
 
 const commands = await loadCommands();
 
-console.log("HoysCLI - 1.0.0");
+console.log("HoysCLI - 1.0.1");
 console.log('Run "help" if you need to learn the available commands.');
 console.log("");
 
