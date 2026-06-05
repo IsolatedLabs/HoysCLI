@@ -64,7 +64,7 @@ npm start
 ## Example
 
 ```txt
-HoysCLI - 1.0.0
+HoysCLI - X.X.X
 Run "help" if you need to learn the available commands.
 
 > help
