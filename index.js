@@ -1,8 +1,9 @@
 #!/usr/bin/env node
+
 import readline from "node:readline";
 import { loadCommands } from "./loader.js";
 
-const commands = await loadCommands();
+let commands = await loadCommands();
 
 console.log("HoysCLI - 1.0.2");
 console.log('Run "help" if you need to learn the available commands.');
@@ -18,6 +19,10 @@ function printPrompt() {
   rl.prompt();
 }
 
+global.reloadCommands = async () => {
+  commands = await loadCommands();
+};
+
 rl.prompt();
 
 rl.on("line", async (line) => {
@@ -29,6 +34,7 @@ rl.on("line", async (line) => {
   }
 
   const [name, ...args] = input.split(/\s+/);
+
   const command = commands.get(name);
 
   if (!command) {
@@ -42,10 +48,15 @@ rl.on("line", async (line) => {
       args,
       raw: input,
       commands,
-      commandName: name
+      commandName: name,
+      reloadCommands: global.reloadCommands
     });
   } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
+    console.error(
+      error instanceof Error
+        ? error.message
+        : String(error)
+    );
   }
 
   printPrompt();
