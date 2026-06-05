@@ -40,14 +40,25 @@ hoyscli/
 ## Install
 
 ```bash
+npm install hoyscli -g
+```
+Or
+
+```bash
+git clone https://github.com/IsolatedLabs/HoysCLI/
+cd HoysCLI
 npm install
-npm link
 ```
 
 ## Run
 
 ```bash
 hoyscli
+```
+Or
+
+```bash
+npm start
 ```
 
 ## Example
