@@ -1,88 +1,94 @@
-#!/usr/bin/env node
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-import readline from "node:readline";
-import { loadCommands } from "./loader.js";
+export async function loadCommands() {
+  const commands = new Map();
 
-let commands = await loadCommands();
-let busy = false;
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
 
-console.log("HoysCLI - 1.0.3");
-console.log('Run "help" if you need to learn the available commands.');
-console.log("");
+  const cmdsDir = path.join(__dirname, "cmds");
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  prompt: "> "
-});
-
-global.hoyscli = {
-  get commands() {
-    return commands;
-  },
-
-  async reloadCommands() {
-    commands = await loadCommands();
-  },
-
-  lock() {
-    busy = true;
-    rl.pause();
-  },
-
-  unlock() {
-    busy = false;
-    rl.resume();
-    rl.prompt();
-  }
-};
-
-rl.prompt();
-
-rl.on("line", async (line) => {
-  if (busy) return;
-
-  const input = line.trim();
-
-  if (!input) {
-    rl.prompt();
-    return;
-  }
-
-  const [name, ...args] = input.split(/\s+/);
-
-  const command = commands.get(name);
-
-  if (!command) {
-    console.log(`Unknown command: ${name}`);
-    rl.prompt();
-    return;
-  }
+  let categories = [];
 
   try {
-    await command.run({
-      args,
-      raw: input,
-      commands,
-      commandName: name,
-      reloadCommands: global.hoyscli.reloadCommands
+    categories = await fs.readdir(cmdsDir, {
+      withFileTypes: true
     });
   } catch (error) {
     console.error(
-      error instanceof Error
-        ? error.message
-        : String(error)
+      "Could not read the cmds folder::",
+      error.message
     );
+    return commands;
   }
 
-  if (!busy) {
-    rl.prompt();
+  for (const categoryDir of categories) {
+    if (!categoryDir.isDirectory()) continue;
+
+    const categoryPath = path.join(
+      cmdsDir,
+      categoryDir.name
+    );
+
+    let files = [];
+
+    try {
+      files = await fs.readdir(categoryPath, {
+        withFileTypes: true
+      });
+    } catch (error) {
+      console.error(
+        `It could not be read ${categoryDir.name}:`,
+        error.message
+      );
+      continue;
+    }
+
+    for (const file of files) {
+      if (!file.isFile()) continue;
+      if (!file.name.endsWith(".js")) continue;
+
+      const filePath = path.join(
+        categoryPath,
+        file.name
+      );
+
+      try {
+        const moduleUrl =
+          pathToFileURL(filePath).href +
+          `?update=${Date.now()}`;
+
+        const mod = await import(moduleUrl);
+
+        const command = mod.default;
+
+        if (
+          !command ||
+          typeof command.name !== "string" ||
+          typeof command.run !== "function"
+        ) {
+          continue;
+        }
+
+        command.category ??= categoryDir.name;
+
+        commands.set(command.name, command);
+
+        if (Array.isArray(command.aliases)) {
+          for (const alias of command.aliases) {
+            commands.set(alias, command);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `It could not be loaded ${filePath}:`,
+          error.message
+        );
+      }
+    }
   }
-});
 
-rl.on("SIGINT", () => {
-  if (busy) return;
-
-  console.log("\nBye.");
-  process.exit(0);
-});
+  return commands;
+}
