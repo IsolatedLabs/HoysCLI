@@ -1,10 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export async function loadCommands() {
   const commands = new Map();
-  const cmdsDir = path.resolve("./cmds");
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const cmdsDir = path.join(__dirname, "../cmds");
 
   let categories = [];
   try {
